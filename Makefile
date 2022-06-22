@@ -35,3 +35,5 @@ deploy:
 apply-nginx:
 	git pull origin main
 	sudo cp isucari.conf /etc/nginx/sites-enabled/isucari.conf
+	sudo cp nginx.conf /etc/nginx/nginx.conf
+	sudo systemctl restart --now nginx.service
