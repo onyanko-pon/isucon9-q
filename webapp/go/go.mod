@@ -1,4 +1,4 @@
-module github.com/isucon/isucon9-qualify/webapp/go
+module github.com/onyanko-pon/isucon9-q
 
 go 1.12
 
@@ -8,4 +8,5 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	google.golang.org/appengine v1.6.7 // indirect
 )
