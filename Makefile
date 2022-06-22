@@ -25,3 +25,13 @@ staticcheck:
 
 clean:
 	rm -rf bin/*
+
+
+deploy:
+	git pull origin main
+	cd webapp/go && make isucari
+	sudo systemctl restart --now isucari.golang.service
+
+apply-nginx:
+	git pull origin main
+	sudo cp isucari.conf /etc/nginx/sites-enabled/isucari.conf

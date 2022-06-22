@@ -1,3 +1,4 @@
 initial-data/*
 webapp/public/upload/*
-webapp/sql/initial.sql 
+webapp/sql/initial.sql
+webapp/public/logs/*
