@@ -163,6 +163,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			ShippingStatus:            sstatus,
 			CreatedAt:                 item.CreatedAt.Unix(),
 		}
+		fmt.Println(item.CategoryID)
+		fmt.Println(category)
 
 		itemDetails = append(itemDetails, d)
 	}
