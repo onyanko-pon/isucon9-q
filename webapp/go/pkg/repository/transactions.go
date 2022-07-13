@@ -13,11 +13,11 @@ type ItemDetailEntity struct {
 	ID       int64 `db:"id"`
 	SellerID int64 `db:"seller_id"`
 	// Seller                    *model.UserSimple
-	SellerAccountName  string `db:"seller_account_name"`
-	SellerNumSellItems int    `db:"seller_num_sell_items"`
-	BuyerID            int64  `db:"buyer_id"`
-	BuyerAccountName   string `db:"buyer_account_name"`
-	BuyerNumSellItems  int    `db:"buyer_num_sell_items"`
+	SellerAccountName  string  `db:"seller_account_name"`
+	SellerNumSellItems int     `db:"seller_num_sell_items"`
+	BuyerID            *int64  `db:"buyer_id"`
+	BuyerAccountName   *string `db:"buyer_account_name"`
+	BuyerNumSellItems  *int    `db:"buyer_num_sell_items"`
 	// Buyer                     *model.UserSimple
 	Status      string `db:"status"`
 	Name        string `db:"name"`
@@ -29,10 +29,10 @@ type ItemDetailEntity struct {
 	CategoryParentID int    `db:"category_parent_id"`
 	CategoryName     string `db:"category_name"`
 	// Category                  *model.Category
-	TransactionEvidenceID     int64  `db:"transaction_evidence_id"`
-	TransactionEvidenceStatus string `db:"transaction_evidence_status"`
-	ShippingStatus            string `db:"shipping_status"`
-	CreatedAt                 int64  `db:"created_at"`
+	TransactionEvidenceID     *int64    `db:"transaction_evidence_id"`
+	TransactionEvidenceStatus *string   `db:"transaction_evidence_status"`
+	ShippingStatus            *string   `db:"shipping_status"`
+	CreatedAt                 time.Time `db:"created_at"`
 }
 
 const (
@@ -119,6 +119,28 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 	itemDetails := []model.ItemDetail{}
 	for _, item := range items {
 		category := model.GetCategoryByID(item.CategoryID)
+		var buyerid int64
+		var buyer *model.UserSimple
+		if item.BuyerID != nil {
+			buyerid = *(item.BuyerID)
+			buyer = &model.UserSimple{
+				ID:           buyerid,
+				AccountName:  *item.BuyerAccountName,
+				NumSellItems: *item.BuyerNumSellItems,
+			}
+		} else {
+			buyerid = 0
+		}
+
+		var eid int64
+		var estatus string
+		var sstatus string
+		if item.TransactionEvidenceID != nil {
+			eid = *item.TransactionEvidenceID
+			estatus = *item.TransactionEvidenceStatus
+			sstatus = *item.ShippingStatus
+		}
+
 		d := model.ItemDetail{
 			ID:       item.ID,
 			SellerID: item.SellerID,
@@ -127,12 +149,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 				AccountName:  item.SellerAccountName,
 				NumSellItems: item.SellerNumSellItems,
 			},
-			BuyerID: item.BuyerID,
-			Buyer: &model.UserSimple{
-				ID:           item.BuyerID,
-				AccountName:  item.BuyerAccountName,
-				NumSellItems: item.BuyerNumSellItems,
-			},
+			BuyerID:                   buyerid,
+			Buyer:                     buyer,
 			Status:                    item.Status,
 			Name:                      item.Name,
 			Price:                     item.Price,
@@ -140,10 +158,10 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			ImageURL:                  fmt.Sprintf("/upload/%s", item.ImageName),
 			CategoryID:                item.CategoryID,
 			Category:                  &category,
-			TransactionEvidenceID:     item.TransactionEvidenceID,
-			TransactionEvidenceStatus: item.TransactionEvidenceStatus,
-			ShippingStatus:            item.ShippingStatus,
-			CreatedAt:                 item.CreatedAt,
+			TransactionEvidenceID:     eid,
+			TransactionEvidenceStatus: estatus,
+			ShippingStatus:            sstatus,
+			CreatedAt:                 item.CreatedAt.Unix(),
 		}
 
 		itemDetails = append(itemDetails, d)
