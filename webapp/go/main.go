@@ -314,6 +314,7 @@ func getCategoryByID(q sqlx.Queryer, categoryID int) (model.Category, error) {
 	if category.ParentID != 0 {
 		parentCategory := model.GetCategoryByID(category.ParentID)
 		fmt.Println("-parent-")
+		fmt.Println(parentCategory)
 		fmt.Println("-parent-")
 		category.ParentCategoryName = parentCategory.CategoryName
 	}
