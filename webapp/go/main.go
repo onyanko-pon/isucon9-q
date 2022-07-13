@@ -311,6 +311,8 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple model.UserSimpl
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (model.Category, error) {
 	category := model.GetCategoryByID(categoryID)
+	fmt.Println("-child-")
+	fmt.Println(category)
 	if category.ParentID != 0 {
 		parentCategory := model.GetCategoryByID(category.ParentID)
 		fmt.Println("-parent-")
