@@ -28,7 +28,6 @@ clean:
 
 
 deploy:
-  git config --global --add safe.directory /home/isucon/isucari
 	git pull origin main
 	cd webapp/go && make isucari
 	sudo systemctl restart --now isucari.golang.service

@@ -16,3 +16,4 @@ services:
       - ./sql/00_create_database.sql:/docker-entrypoint-initdb.d/00_create_database.sql
       - ./sql/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./sql/02_categories.sql:/docker-entrypoint-initdb.d/02_categories.sql
+      - ./sql/initial.sql:/docker-entrypoint-initdb.d/03_intial.sql
