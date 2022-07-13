@@ -320,6 +320,8 @@ func getCategoryByID(q sqlx.Queryer, categoryID int) (model.Category, error) {
 		fmt.Println("-parent-")
 		category.ParentCategoryName = parentCategory.CategoryName
 	}
+	fmt.Println("-out-child-")
+	fmt.Println(category)
 	return category, nil
 }
 
