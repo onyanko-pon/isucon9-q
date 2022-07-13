@@ -1,4 +1,5 @@
-initial-data/*
+initial-data/images
+initial-data/result
 webapp/public/upload/*
 webapp/sql/initial.sql
 webapp/public/logs/*
