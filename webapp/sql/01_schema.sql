@@ -53,6 +53,8 @@ CREATE TABLE `transaction_evidences` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
+CREATE INDEX transaction_evidences_item_id_index on transaction_evidences(item_id);
+
 DROP TABLE IF EXISTS `shippings`;
 CREATE TABLE `shippings` (
   `transaction_evidence_id` bigint NOT NULL PRIMARY KEY,
@@ -69,6 +71,8 @@ CREATE TABLE `shippings` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
+
+CREATE INDEX shippings_item_id_index on shipping(item_id);
 
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (

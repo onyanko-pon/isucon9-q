@@ -25,9 +25,9 @@ type ItemDetailEntity struct {
 	Description string `db:"description"`
 	ImageName   string `db:"image_name"`
 
-	CategoryID       int    `db:"category_id"`
-	CategoryParentID int    `db:"category_parent_id"`
-	CategoryName     string `db:"category_name"`
+	CategoryID int `db:"category_id"`
+	// CategoryParentID int    `db:"category_parent_id"`
+	// CategoryName     string `db:"category_name"`
 	// Category                  *model.Category
 	TransactionEvidenceID     *int64    `db:"transaction_evidence_id"`
 	TransactionEvidenceStatus *string   `db:"transaction_evidence_status"`
@@ -52,20 +52,22 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		"sellers.id as seller_id, sellers.account_name as seller_account_name, sellers.num_sell_items as seller_num_sell_items, " +
 		"buyers.id as buyer_id, buyers.account_name as buyer_account_name, buyers.num_sell_items as buyer_num_sell_items, " +
 		"items.status as status, items.name as name, items.price as price, items.description as description, items.image_name as image_name, " +
-		"categories.id as category_id, categories.parent_id as category_parent_id, categories.category_name category_name, " +
+		"items.category_id as category_id, " +
+		// "categories.id as category_id, categories.parent_id as category_parent_id, categories.category_name category_name, " +
 		"transaction_evidences.id as transaction_evidence_id, transaction_evidences.status as transaction_evidence_status, " +
 		"shippings.status as shipping_status, items.created_at as created_at FROM items "
 
 	queryJoin := " " +
 		"LEFT JOIN users as sellers ON sellers.id = items.seller_id " +
 		"LEFT JOIN users as buyers ON buyers.id = items.buyer_id " +
-		"LEFT JOIN categories ON categories.id = items.category_id " +
+		// "LEFT JOIN categories ON categories.id = items.category_id " +
 		"LEFT JOIN transaction_evidences on transaction_evidences.item_id = items.id " +
 		"LEFT JOIN shippings on shippings.item_id = items.id "
 
 	if itemID > 0 && createdAt > 0 {
 
-		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) AND (items.created_at < ?  OR (items.created_at <= ? AND items.id < ?)) "
+		// queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) AND (items.created_at < ?  OR (items.created_at <= ? AND items.id < ?)) "
+		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND (items.created_at < ?  OR (items.created_at <= ? AND items.id < ?)) "
 
 		query := querySelect + queryJoin + queryWhere + " Group By items.id ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
 		err := dbx.Select(&items,
@@ -89,7 +91,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		}
 	} else {
 		// 1st page
-		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) "
+		// queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) "
+		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) "
 		query := querySelect + queryJoin + queryWhere + " Group By items.id  ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
 
 		// fmt.Println(query)
@@ -98,11 +101,11 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			query,
 			user.ID,
 			user.ID,
-			ItemStatusOnSale,
-			ItemStatusTrading,
-			ItemStatusSoldOut,
-			ItemStatusCancel,
-			ItemStatusStop,
+			// ItemStatusOnSale,
+			// ItemStatusTrading,
+			// ItemStatusSoldOut,
+			// ItemStatusCancel,
+			// ItemStatusStop,
 			TransactionsPerPage+1,
 		)
 		if err != nil {

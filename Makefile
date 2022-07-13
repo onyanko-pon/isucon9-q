@@ -29,8 +29,8 @@ clean:
 
 deploy:
 	sudo truncate -s 0 -c /home/isucon/isucari/webapp/public/logs/access.log
-	rm  /home/isucon/isucari/webapp/go/isucari
 	git pull origin main
+	rm  /home/isucon/isucari/webapp/go/isucari
 	cd webapp/go && make isucari
 	sudo systemctl restart --now isucari.golang.service
 
