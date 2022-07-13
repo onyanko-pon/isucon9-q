@@ -4,3 +4,7 @@ all: isucari
 
 isucari: *.go
 	go build -o isucari
+
+dev:
+	go mod tidy
+	air
