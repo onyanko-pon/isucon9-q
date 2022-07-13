@@ -2,7 +2,9 @@ version: "3.8"
 services:
   mysql:
     container_name: isucon9-mysql
-    image: mysql:5.7
+    build:
+      context: .
+      dockerfile: sql/Dockerfile
     platform: linux/x86_64
     environment:
       MYSQL_HOST: "%"
@@ -17,3 +19,4 @@ services:
       - ./sql/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./sql/02_categories.sql:/docker-entrypoint-initdb.d/02_categories.sql
       - ./sql/initial.sql:/docker-entrypoint-initdb.d/03_intial.sql
+      - ./sql/my.cnf:/etc/mysql/conf.d/my.cnf
