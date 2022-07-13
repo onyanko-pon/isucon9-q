@@ -602,11 +602,11 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		// 	outputErrorMsg(w, http.StatusNotFound, "seller not found")
 		// 	return
 		// }
-		category, err := getCategoryByID(dbx, item.CategoryID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "category not found")
-			return
-		}
+		// category, err := getCategoryByID(dbx, item.CategoryID)
+		// if err != nil {
+		// 	outputErrorMsg(w, http.StatusNotFound, "category not found")
+		// 	return
+		// }
 		// itemSimples = append(itemSimples, model.ItemSimple{
 		// 	ID:         item.ID,
 		// 	SellerID:   item.SellerID,
@@ -620,7 +620,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		// 	CreatedAt:  item.CreatedAt.Unix(),
 		// })
 
-		// category := model.GetCategoryByID(item.CategoryID)
+		category := model.GetCategoryByID(item.CategoryID)
 		d := model.ItemSimple{
 			ID:       item.ID,
 			SellerID: item.SellerID,
