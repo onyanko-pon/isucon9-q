@@ -117,7 +117,7 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 	tx.Commit()
 
 	itemDetails := []model.ItemDetail{}
-	fmt.Printf("---items---")
+	fmt.Println("---items---")
 	for _, item := range items {
 		category := model.GetCategoryByID(item.CategoryID)
 		var buyerid int64
@@ -170,6 +170,6 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 
 		itemDetails = append(itemDetails, d)
 	}
-	fmt.Printf("---items---")
+	fmt.Println("---items---")
 	return itemDetails, nil
 }
