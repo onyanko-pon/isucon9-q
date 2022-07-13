@@ -63,13 +63,12 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		"LEFT JOIN transaction_evidences on transaction_evidences.item_id = items.id " +
 		"LEFT JOIN shippings on shippings.item_id = items.id "
 
-	tx := dbx.MustBegin()
 	if itemID > 0 && createdAt > 0 {
 
 		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) AND (items.created_at < ?  OR (items.created_at <= ? AND items.id < ?)) "
 
 		query := querySelect + queryJoin + queryWhere + " Group By items.id ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
-		err := tx.Select(&items,
+		err := dbx.Select(&items,
 			query,
 			user.ID,
 			user.ID,
@@ -96,7 +95,7 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 
 		// fmt.Println(query)
 
-		err := tx.Select(&items,
+		err := dbx.Select(&items,
 			query,
 			user.ID,
 			user.ID,
@@ -114,7 +113,6 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			return nil, err
 		}
 	}
-	tx.Commit()
 
 	itemDetails := []model.ItemDetail{}
 	fmt.Println("---items---")
