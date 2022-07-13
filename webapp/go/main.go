@@ -18,6 +18,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+	"github.com/onyanko-pon/isucon9-q/pkg/model"
+	"github.com/onyanko-pon/isucon9-q/pkg/repository"
 	goji "goji.io"
 	"goji.io/pat"
 	"golang.org/x/crypto/bcrypt"
@@ -70,106 +72,6 @@ type Config struct {
 	Val  string `json:"val" db:"val"`
 }
 
-type User struct {
-	ID             int64     `json:"id" db:"id"`
-	AccountName    string    `json:"account_name" db:"account_name"`
-	HashedPassword []byte    `json:"-" db:"hashed_password"`
-	Address        string    `json:"address,omitempty" db:"address"`
-	NumSellItems   int       `json:"num_sell_items" db:"num_sell_items"`
-	LastBump       time.Time `json:"-" db:"last_bump"`
-	CreatedAt      time.Time `json:"-" db:"created_at"`
-}
-
-type UserSimple struct {
-	ID           int64  `json:"id"`
-	AccountName  string `json:"account_name"`
-	NumSellItems int    `json:"num_sell_items"`
-}
-
-type Item struct {
-	ID          int64     `json:"id" db:"id"`
-	SellerID    int64     `json:"seller_id" db:"seller_id"`
-	BuyerID     int64     `json:"buyer_id" db:"buyer_id"`
-	Status      string    `json:"status" db:"status"`
-	Name        string    `json:"name" db:"name"`
-	Price       int       `json:"price" db:"price"`
-	Description string    `json:"description" db:"description"`
-	ImageName   string    `json:"image_name" db:"image_name"`
-	CategoryID  int       `json:"category_id" db:"category_id"`
-	CreatedAt   time.Time `json:"-" db:"created_at"`
-	UpdatedAt   time.Time `json:"-" db:"updated_at"`
-}
-
-type ItemSimple struct {
-	ID         int64       `json:"id"`
-	SellerID   int64       `json:"seller_id"`
-	Seller     *UserSimple `json:"seller"`
-	Status     string      `json:"status"`
-	Name       string      `json:"name"`
-	Price      int         `json:"price"`
-	ImageURL   string      `json:"image_url"`
-	CategoryID int         `json:"category_id"`
-	Category   *Category   `json:"category"`
-	CreatedAt  int64       `json:"created_at"`
-}
-
-type ItemDetail struct {
-	ID                        int64       `json:"id"`
-	SellerID                  int64       `json:"seller_id"`
-	Seller                    *UserSimple `json:"seller"`
-	BuyerID                   int64       `json:"buyer_id,omitempty"`
-	Buyer                     *UserSimple `json:"buyer,omitempty"`
-	Status                    string      `json:"status"`
-	Name                      string      `json:"name"`
-	Price                     int         `json:"price"`
-	Description               string      `json:"description"`
-	ImageURL                  string      `json:"image_url"`
-	CategoryID                int         `json:"category_id"`
-	Category                  *Category   `json:"category"`
-	TransactionEvidenceID     int64       `json:"transaction_evidence_id,omitempty"`
-	TransactionEvidenceStatus string      `json:"transaction_evidence_status,omitempty"`
-	ShippingStatus            string      `json:"shipping_status,omitempty"`
-	CreatedAt                 int64       `json:"created_at"`
-}
-
-type TransactionEvidence struct {
-	ID                 int64     `json:"id" db:"id"`
-	SellerID           int64     `json:"seller_id" db:"seller_id"`
-	BuyerID            int64     `json:"buyer_id" db:"buyer_id"`
-	Status             string    `json:"status" db:"status"`
-	ItemID             int64     `json:"item_id" db:"item_id"`
-	ItemName           string    `json:"item_name" db:"item_name"`
-	ItemPrice          int       `json:"item_price" db:"item_price"`
-	ItemDescription    string    `json:"item_description" db:"item_description"`
-	ItemCategoryID     int       `json:"item_category_id" db:"item_category_id"`
-	ItemRootCategoryID int       `json:"item_root_category_id" db:"item_root_category_id"`
-	CreatedAt          time.Time `json:"-" db:"created_at"`
-	UpdatedAt          time.Time `json:"-" db:"updated_at"`
-}
-
-type Shipping struct {
-	TransactionEvidenceID int64     `json:"transaction_evidence_id" db:"transaction_evidence_id"`
-	Status                string    `json:"status" db:"status"`
-	ItemName              string    `json:"item_name" db:"item_name"`
-	ItemID                int64     `json:"item_id" db:"item_id"`
-	ReserveID             string    `json:"reserve_id" db:"reserve_id"`
-	ReserveTime           int64     `json:"reserve_time" db:"reserve_time"`
-	ToAddress             string    `json:"to_address" db:"to_address"`
-	ToName                string    `json:"to_name" db:"to_name"`
-	FromAddress           string    `json:"from_address" db:"from_address"`
-	FromName              string    `json:"from_name" db:"from_name"`
-	ImgBinary             []byte    `json:"-" db:"img_binary"`
-	CreatedAt             time.Time `json:"-" db:"created_at"`
-	UpdatedAt             time.Time `json:"-" db:"updated_at"`
-}
-
-type Category struct {
-	ID                 int    `json:"id" db:"id"`
-	ParentID           int    `json:"parent_id" db:"parent_id"`
-	CategoryName       string `json:"category_name" db:"category_name"`
-	ParentCategoryName string `json:"parent_category_name,omitempty" db:"-"`
-}
-
 type reqInitialize struct {
 	PaymentServiceURL  string `json:"payment_service_url"`
 	ShipmentServiceURL string `json:"shipment_service_url"`
@@ -181,21 +83,21 @@ type resInitialize struct {
 }
 
 type resNewItems struct {
-	RootCategoryID   int          `json:"root_category_id,omitempty"`
-	RootCategoryName string       `json:"root_category_name,omitempty"`
-	HasNext          bool         `json:"has_next"`
-	Items            []ItemSimple `json:"items"`
+	RootCategoryID   int                `json:"root_category_id,omitempty"`
+	RootCategoryName string             `json:"root_category_name,omitempty"`
+	HasNext          bool               `json:"has_next"`
+	Items            []model.ItemSimple `json:"items"`
 }
 
 type resUserItems struct {
-	User    *UserSimple  `json:"user"`
-	HasNext bool         `json:"has_next"`
-	Items   []ItemSimple `json:"items"`
+	User    *model.UserSimple  `json:"user"`
+	HasNext bool               `json:"has_next"`
+	Items   []model.ItemSimple `json:"items"`
 }
 
 type resTransactions struct {
-	HasNext bool         `json:"has_next"`
-	Items   []ItemDetail `json:"items"`
+	HasNext bool               `json:"has_next"`
+	Items   []model.ItemDetail `json:"items"`
 }
 
 type reqRegister struct {
@@ -262,10 +164,10 @@ type reqBump struct {
 }
 
 type resSetting struct {
-	CSRFToken         string     `json:"csrf_token"`
-	PaymentServiceURL string     `json:"payment_service_url"`
-	User              *User      `json:"user,omitempty"`
-	Categories        []Category `json:"categories"`
+	CSRFToken         string           `json:"csrf_token"`
+	PaymentServiceURL string           `json:"payment_service_url"`
+	User              *model.User      `json:"user,omitempty"`
+	Categories        []model.Category `json:"categories"`
 }
 
 func init() {
@@ -376,7 +278,7 @@ func getCSRFToken(r *http.Request) string {
 	return csrfToken.(string)
 }
 
-func getUser(r *http.Request) (user User, errCode int, errMsg string) {
+func getUser(r *http.Request) (user model.User, errCode int, errMsg string) {
 	session := getSession(r)
 	userID, ok := session.Values["user_id"]
 	if !ok {
@@ -395,8 +297,8 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 	return user, http.StatusOK, ""
 }
 
-func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
-	user := User{}
+func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple model.UserSimple, err error) {
+	user := model.User{}
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
@@ -407,8 +309,8 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
-func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
+func getCategoryByID(q sqlx.Queryer, categoryID int) (category model.Category, err error) {
+	category = model.GetCategoryByID(categoryID)
 	if category.ParentID != 0 {
 		parentCategory, err := getCategoryByID(q, category.ParentID)
 		if err != nil {
@@ -525,7 +427,7 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := []Item{}
+	items := []model.Item{}
 	if itemID > 0 && createdAt > 0 {
 		// paging
 		err := dbx.Select(&items,
@@ -557,7 +459,7 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	itemSimples := []ItemSimple{}
+	itemSimples := []model.ItemSimple{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
@@ -569,7 +471,7 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
 			return
 		}
-		itemSimples = append(itemSimples, ItemSimple{
+		itemSimples = append(itemSimples, model.ItemSimple{
 			ID:         item.ID,
 			SellerID:   item.SellerID,
 			Seller:     &seller,
@@ -676,7 +578,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := []Item{}
+	items := []model.Item{}
 	err = dbx.Select(&items, inQuery, inArgs...)
 
 	if err != nil {
@@ -685,7 +587,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemSimples := []ItemSimple{}
+	itemSimples := []model.ItemSimple{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
@@ -697,7 +599,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
 			return
 		}
-		itemSimples = append(itemSimples, ItemSimple{
+		itemSimples = append(itemSimples, model.ItemSimple{
 			ID:         item.ID,
 			SellerID:   item.SellerID,
 			Seller:     &seller,
@@ -764,7 +666,7 @@ func getUserItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := []Item{}
+	items := []model.Item{}
 	if itemID > 0 && createdAt > 0 {
 		// paging
 		err := dbx.Select(&items,
@@ -800,14 +702,14 @@ func getUserItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	itemSimples := []ItemSimple{}
+	itemSimples := []model.ItemSimple{}
 	for _, item := range items {
 		category, err := getCategoryByID(dbx, item.CategoryID)
 		if err != nil {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
 			return
 		}
-		itemSimples = append(itemSimples, ItemSimple{
+		itemSimples = append(itemSimples, model.ItemSimple{
 			ID:         item.ID,
 			SellerID:   item.SellerID,
 			Seller:     &userSimple,
@@ -867,138 +769,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tx := dbx.MustBegin()
-	items := []Item{}
-	if itemID > 0 && createdAt > 0 {
-		// paging
-		err := tx.Select(&items,
-			"SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) AND (`created_at` < ?  OR (`created_at` <= ? AND `id` < ?)) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
-			user.ID,
-			user.ID,
-			ItemStatusOnSale,
-			ItemStatusTrading,
-			ItemStatusSoldOut,
-			ItemStatusCancel,
-			ItemStatusStop,
-			time.Unix(createdAt, 0),
-			time.Unix(createdAt, 0),
-			itemID,
-			TransactionsPerPage+1,
-		)
-		if err != nil {
-			log.Print(err)
-			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
-			return
-		}
-	} else {
-		// 1st page
-		err := tx.Select(&items,
-			"SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
-			user.ID,
-			user.ID,
-			ItemStatusOnSale,
-			ItemStatusTrading,
-			ItemStatusSoldOut,
-			ItemStatusCancel,
-			ItemStatusStop,
-			TransactionsPerPage+1,
-		)
-		if err != nil {
-			log.Print(err)
-			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
-			return
-		}
-	}
-
-	itemDetails := []ItemDetail{}
-	for _, item := range items {
-		seller, err := getUserSimpleByID(tx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			tx.Rollback()
-			return
-		}
-		category, err := getCategoryByID(tx, item.CategoryID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "category not found")
-			tx.Rollback()
-			return
-		}
-
-		itemDetail := ItemDetail{
-			ID:       item.ID,
-			SellerID: item.SellerID,
-			Seller:   &seller,
-			// BuyerID
-			// Buyer
-			Status:      item.Status,
-			Name:        item.Name,
-			Price:       item.Price,
-			Description: item.Description,
-			ImageURL:    getImageURL(item.ImageName),
-			CategoryID:  item.CategoryID,
-			// TransactionEvidenceID
-			// TransactionEvidenceStatus
-			// ShippingStatus
-			Category:  &category,
-			CreatedAt: item.CreatedAt.Unix(),
-		}
-
-		if item.BuyerID != 0 {
-			buyer, err := getUserSimpleByID(tx, item.BuyerID)
-			if err != nil {
-				outputErrorMsg(w, http.StatusNotFound, "buyer not found")
-				tx.Rollback()
-				return
-			}
-			itemDetail.BuyerID = item.BuyerID
-			itemDetail.Buyer = &buyer
-		}
-
-		transactionEvidence := TransactionEvidence{}
-		err = tx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", item.ID)
-		if err != nil && err != sql.ErrNoRows {
-			// It's able to ignore ErrNoRows
-			log.Print(err)
-			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
-			return
-		}
-
-		if transactionEvidence.ID > 0 {
-			shipping := Shipping{}
-			err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?", transactionEvidence.ID)
-			if err == sql.ErrNoRows {
-				outputErrorMsg(w, http.StatusNotFound, "shipping not found")
-				tx.Rollback()
-				return
-			}
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "db error")
-				tx.Rollback()
-				return
-			}
-			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-				ReserveID: shipping.ReserveID,
-			})
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-				tx.Rollback()
-				return
-			}
-
-			itemDetail.TransactionEvidenceID = transactionEvidence.ID
-			itemDetail.TransactionEvidenceStatus = transactionEvidence.Status
-			itemDetail.ShippingStatus = ssr.Status
-		}
-
-		itemDetails = append(itemDetails, itemDetail)
-	}
-	tx.Commit()
+	itemDetails, err := repository.GetTransactions(dbx, user, itemID, createdAt)
 
 	hasNext := false
 	if len(itemDetails) > TransactionsPerPage {
@@ -1030,7 +801,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item := Item{}
+	item := model.Item{}
 	err = dbx.Get(&item, "SELECT * FROM `items` WHERE `id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -1054,7 +825,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemDetail := ItemDetail{
+	itemDetail := model.ItemDetail{
 		ID:       item.ID,
 		SellerID: item.SellerID,
 		Seller:   &seller,
@@ -1082,7 +853,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		itemDetail.BuyerID = item.BuyerID
 		itemDetail.Buyer = &buyer
 
-		transactionEvidence := TransactionEvidence{}
+		transactionEvidence := model.TransactionEvidence{}
 		err = dbx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", item.ID)
 		if err != nil && err != sql.ErrNoRows {
 			// It's able to ignore ErrNoRows
@@ -1092,7 +863,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if transactionEvidence.ID > 0 {
-			shipping := Shipping{}
+			shipping := model.Shipping{}
 			err = dbx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?", transactionEvidence.ID)
 			if err == sql.ErrNoRows {
 				outputErrorMsg(w, http.StatusNotFound, "shipping not found")
@@ -1143,7 +914,7 @@ func postItemEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetItem := Item{}
+	targetItem := model.Item{}
 	err = dbx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -1223,7 +994,7 @@ func getQRCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactionEvidence := TransactionEvidence{}
+	transactionEvidence := model.TransactionEvidence{}
 	err = dbx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `id` = ?", transactionEvidenceID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidences not found")
@@ -1240,7 +1011,7 @@ func getQRCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shipping := Shipping{}
+	shipping := model.Shipping{}
 	err = dbx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
@@ -1288,7 +1059,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	targetItem := Item{}
+	targetItem := model.Item{}
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", rb.ItemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -1315,7 +1086,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seller := User{}
+	seller := model.User{}
 	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", targetItem.SellerID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "seller not found")
@@ -1478,7 +1249,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactionEvidence := TransactionEvidence{}
+	transactionEvidence := model.TransactionEvidence{}
 	err = dbx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidences not found")
@@ -1498,7 +1269,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	item := Item{}
+	item := model.Item{}
 	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -1537,7 +1308,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shipping := Shipping{}
+	shipping := model.Shipping{}
 	err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
@@ -1609,7 +1380,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactionEvidence := TransactionEvidence{}
+	transactionEvidence := model.TransactionEvidence{}
 	err = dbx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidence not found")
@@ -1629,7 +1400,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	item := Item{}
+	item := model.Item{}
 	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "items not found")
@@ -1668,7 +1439,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shipping := Shipping{}
+	shipping := model.Shipping{}
 	err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
@@ -1755,7 +1526,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactionEvidence := TransactionEvidence{}
+	transactionEvidence := model.TransactionEvidence{}
 	err = dbx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidence not found")
@@ -1774,7 +1545,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tx := dbx.MustBegin()
-	item := Item{}
+	item := model.Item{}
 	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "items not found")
@@ -1813,7 +1584,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shipping := Shipping{}
+	shipping := model.Shipping{}
 	err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err != nil {
 		log.Print(err)
@@ -1969,7 +1740,7 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	seller := User{}
+	seller := model.User{}
 	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", user.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "user not found")
@@ -2057,7 +1828,7 @@ func postBump(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	targetItem := Item{}
+	targetItem := model.Item{}
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -2077,7 +1848,7 @@ func postBump(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seller := User{}
+	seller := model.User{}
 	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", user.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "user not found")
@@ -2152,7 +1923,7 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ress.PaymentServiceURL = getPaymentServiceURL()
 
-	categories := []Category{}
+	categories := []model.Category{}
 
 	err := dbx.Select(&categories, "SELECT * FROM `categories`")
 	if err != nil {
@@ -2183,7 +1954,7 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u := User{}
+	u := model.User{}
 	err = dbx.Get(&u, "SELECT * FROM `users` WHERE `account_name` = ?", accountName)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
@@ -2270,7 +2041,7 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u := User{
+	u := model.User{
 		ID:          userID,
 		AccountName: accountName,
 		Address:     address,
@@ -2290,7 +2061,7 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func getReports(w http.ResponseWriter, r *http.Request) {
-	transactionEvidences := make([]TransactionEvidence, 0)
+	transactionEvidences := make([]model.TransactionEvidence, 0)
 	err := dbx.Select(&transactionEvidences, "SELECT * FROM `transaction_evidences` WHERE `id` > 15007")
 	if err != nil {
 		log.Print(err)

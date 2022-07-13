@@ -3,4 +3,6 @@ initial-data/result
 initial-data/pwcache
 webapp/public/upload/*
 webapp/sql/initial.sql
-webapp/public/logs/*
+webapp/public/logs/*.log
+
+webapp/go/isucari
