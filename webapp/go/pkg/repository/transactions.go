@@ -85,7 +85,6 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		if err != nil {
 			log.Print(err)
 			// outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
 			return nil, err
 		}
 	} else {
@@ -109,13 +108,11 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		if err != nil {
 			log.Print(err)
 			// outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
 			return nil, err
 		}
 	}
 
 	itemDetails := []model.ItemDetail{}
-	fmt.Println("---items---")
 	for _, item := range items {
 		category := model.GetCategoryByID(item.CategoryID)
 		var buyerid int64
@@ -162,12 +159,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			ShippingStatus:            sstatus,
 			CreatedAt:                 item.CreatedAt.Unix(),
 		}
-		fmt.Println(item.CategoryID)
-		fmt.Println(category)
-		fmt.Println("p category name:", category.ParentCategoryName)
 
 		itemDetails = append(itemDetails, d)
 	}
-	fmt.Println("---items---")
 	return itemDetails, nil
 }
