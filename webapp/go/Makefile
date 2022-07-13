@@ -2,7 +2,7 @@ export GO111MODULE=on
 
 all: isucari
 
-isucari: *.go
+isucari:
 	go build -o isucari
 
 dev:
