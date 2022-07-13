@@ -166,7 +166,7 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		}
 		fmt.Println(item.CategoryID)
 		fmt.Println(category)
-		fmt.Println(category.ParentCategoryName)
+		fmt.Println("p category name:", category.ParentCategoryName)
 
 		itemDetails = append(itemDetails, d)
 	}
