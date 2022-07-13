@@ -10,29 +10,29 @@ import (
 )
 
 type ItemDetailEntity struct {
-	ID       int64
-	SellerID int64
+	ID       int64 `db:"id"`
+	SellerID int64 `db:"seller_id"`
 	// Seller                    *model.UserSimple
-	SellerAccoutName   string
-	SellerNumSellItems int
-	BuyerID            int64
-	BuyerAccoutName    string
-	BuyerNumSellItems  int
+	SellerAccountName  string `db:"seller_account_name"`
+	SellerNumSellItems int    `db:"seller_num_sell_items"`
+	BuyerID            int64  `db:"buyer_id"`
+	BuyerAccountName   string `db:"buyer_account_name"`
+	BuyerNumSellItems  int    `db:"buyer_num_sell_items"`
 	// Buyer                     *model.UserSimple
-	Status      string
-	Name        string
-	Price       int
-	Description string
-	ImageName   string
+	Status      string `db:"status"`
+	Name        string `db:"name"`
+	Price       int    `db:"price"`
+	Description string `db:"description"`
+	ImageName   string `db:"image_name"`
 
-	CategoryID       int
-	CategoryParentID int
-	CategoryName     string
+	CategoryID       int    `db:"category_id"`
+	CategoryParentID int    `db:"category_parent_id"`
+	CategoryName     string `db:"category_name"`
 	// Category                  *model.Category
-	TransactionEvidenceID     int64
-	TransactionEvidenceStatus string
-	ShippingStatus            string
-	CreatedAt                 int64
+	TransactionEvidenceID     int64  `db:"transaction_evidence_id"`
+	TransactionEvidenceStatus string `db:"transaction_evidence_status"`
+	ShippingStatus            string `db:"shipping_status"`
+	CreatedAt                 int64  `db:"created_at"`
 }
 
 const (
@@ -48,27 +48,27 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 	items := []ItemDetailEntity{}
 
 	querySelect := "SELECT " +
-		"items.id as id " +
-		"sellers.id as seller_id, sellers.accout_name as seller_accout_name, sellers.num_sell_items as seller_num_sell_items " +
-		"buyers.id as buyer_id, buyers.accout_name as buyer_accout_name, buyers.num_sell_items as buyer_num_sell_items " +
-		"items.status as status, items.name as name, items.price as price, items.descriptions as descriptions, items.image_name as image_name " +
-		"categories.id as category_id, categories.parent_id as category_parent_id, categories.name category_name " +
-		"transaction_evidences.id as transaction_evidence_id, transaction_evidences.status as transaction_evidence_status" +
-		"shippings.status as shipping_status, items.created_at as created_at FROM `items` "
+		"items.id as id, " +
+		"sellers.id as seller_id, sellers.account_name as seller_account_name, sellers.num_sell_items as seller_num_sell_items, " +
+		"buyers.id as buyer_id, buyers.account_name as buyer_account_name, buyers.num_sell_items as buyer_num_sell_items, " +
+		"items.status as status, items.name as name, items.price as price, items.description as description, items.image_name as image_name, " +
+		"categories.id as category_id, categories.parent_id as category_parent_id, categories.category_name category_name, " +
+		"transaction_evidences.id as transaction_evidence_id, transaction_evidences.status as transaction_evidence_status, " +
+		"shippings.status as shipping_status, items.created_at as created_at FROM items "
 
 	queryJoin := " " +
-		"JOIN users as sellers ON sellers.id = items.seller_id " +
-		"JOIN users as buyers ON buyers.id = items.buyer_id " +
-		"JOIN categories ON categories.id = items.category_id " +
-		"JOIN transaction_evidences on transaction_evidences.item_id = items.id " +
-		"JOIN shippings on shippings.item_id = items.id "
+		"LEFT JOIN users as sellers ON sellers.id = items.seller_id " +
+		"LEFT JOIN users as buyers ON buyers.id = items.buyer_id " +
+		"LEFT JOIN categories ON categories.id = items.category_id " +
+		"LEFT JOIN transaction_evidences on transaction_evidences.item_id = items.id " +
+		"LEFT JOIN shippings on shippings.item_id = items.id "
 
 	tx := dbx.MustBegin()
 	if itemID > 0 && createdAt > 0 {
 
-		queryWhere := "WHERE (`items.seller_id` = ? OR `items.buyer_id` = ?) AND `items.status` IN (?,?,?,?,?) AND (`items.created_at` < ?  OR (`items.created_at` <= ? AND `items.id` < ?)) "
+		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) AND (items.created_at < ?  OR (items.created_at <= ? AND items.id < ?)) "
 
-		query := querySelect + queryJoin + queryWhere + " ORDER BY `items.created_at` DESC, `id` GroupBy items.id DESC LIMIT ?"
+		query := querySelect + queryJoin + queryWhere + " Group By items.id ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
 		err := tx.Select(&items,
 			query,
 			user.ID,
@@ -91,8 +91,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		}
 	} else {
 		// 1st page
-		queryWhere := "WHERE (`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) "
-		query := querySelect + queryJoin + queryWhere + " ORDER BY `items.created_at` DESC, `id` GroupBy items.id DESC LIMIT ?"
+		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) "
+		query := querySelect + queryJoin + queryWhere + " Group By items.id  ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
 
 		err := tx.Select(&items,
 			query,
@@ -122,13 +122,13 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 			SellerID: item.SellerID,
 			Seller: &model.UserSimple{
 				ID:           item.SellerID,
-				AccountName:  item.SellerAccoutName,
+				AccountName:  item.SellerAccountName,
 				NumSellItems: item.SellerNumSellItems,
 			},
 			BuyerID: item.BuyerID,
 			Buyer: &model.UserSimple{
 				ID:           item.BuyerID,
-				AccountName:  item.BuyerAccoutName,
+				AccountName:  item.BuyerAccountName,
 				NumSellItems: item.BuyerNumSellItems,
 			},
 			Status:                    item.Status,
