@@ -28,12 +28,12 @@ clean:
 
 
 deploy:
+  git config --global --add safe.directory /home/isucon/isucari
 	git pull origin main
 	cd webapp/go && make isucari
 	sudo systemctl restart --now isucari.golang.service
 
 apply-nginx:
-	git pull origin main
 	sudo cp isucari.conf /etc/nginx/sites-enabled/isucari.conf
 	sudo cp nginx.conf /etc/nginx/nginx.conf
 	sudo systemctl restart --now nginx.service
