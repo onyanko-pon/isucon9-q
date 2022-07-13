@@ -311,15 +311,11 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple model.UserSimpl
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category model.Category, err error) {
 	category = model.GetCategoryByID(categoryID)
-	err = nil
 	if category.ParentID != 0 {
-		parentCategory, err := getCategoryByID(q, category.ParentID)
-		if err != nil {
-			return category, err
-		}
+		parentCategory := model.GetCategoryByID(categoryID)
 		category.ParentCategoryName = parentCategory.CategoryName
 	}
-	return category, err
+	return category, nil
 }
 
 func getConfigByName(name string) (string, error) {
