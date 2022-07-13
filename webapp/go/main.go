@@ -771,6 +771,11 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	itemDetails, err := repository.GetTransactions(dbx, user, itemID, createdAt)
 
+	if err != nil {
+		outputErrorMsg(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	hasNext := false
 	if len(itemDetails) > TransactionsPerPage {
 		hasNext = true
