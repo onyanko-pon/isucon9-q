@@ -94,6 +94,8 @@ func GetTransactions(dbx *sqlx.DB, user model.User, itemID int64, createdAt int6
 		queryWhere := "WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) "
 		query := querySelect + queryJoin + queryWhere + " Group By items.id  ORDER BY items.created_at DESC, items.id DESC LIMIT ?"
 
+		// fmt.Println(query)
+
 		err := tx.Select(&items,
 			query,
 			user.ID,
