@@ -309,10 +309,10 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple model.UserSimpl
 	return userSimple, err
 }
 
-func getCategoryByID(q sqlx.Queryer, categoryID int) (category model.Category, err error) {
-	category = model.GetCategoryByID(categoryID)
+func getCategoryByID(q sqlx.Queryer, categoryID int) (model.Category, error) {
+	category := model.GetCategoryByID(categoryID)
 	if category.ParentID != 0 {
-		parentCategory := model.GetCategoryByID(categoryID)
+		parentCategory := model.GetCategoryByID(category.ParentID)
 		category.ParentCategoryName = parentCategory.CategoryName
 	}
 	return category, nil
