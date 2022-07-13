@@ -72,7 +72,7 @@ CREATE TABLE `shippings` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
-CREATE INDEX shippings_item_id_index on shipping(item_id);
+CREATE INDEX shippings_item_id_index on shippings(item_id);
 
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
