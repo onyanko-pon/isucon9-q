@@ -1937,6 +1937,23 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ress)
 }
 
+var passwordCache map[string]string
+
+func validatePassword(hash []byte, plain string) bool {
+
+	h, ok := passwordCache[plain]
+	if ok {
+		return h != string(hash)
+	}
+
+	err := bcrypt.CompareHashAndPassword(hash, []byte(plain))
+	match := err == nil
+	if match {
+		passwordCache[plain] = string(hash)
+	}
+	return match
+}
+
 func postLogin(w http.ResponseWriter, r *http.Request) {
 	rl := reqLogin{}
 	err := json.NewDecoder(r.Body).Decode(&rl)
@@ -1967,17 +1984,24 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
+	ok := validatePassword(u.HashedPassword, password)
+
+	if !ok {
 		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
 		return
 	}
-	if err != nil {
-		log.Print(err)
 
-		outputErrorMsg(w, http.StatusInternalServerError, "crypt error")
-		return
-	}
+	// err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
+	// if err == bcrypt.ErrMismatchedHashAndPassword {
+	// 	outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+	// 	return
+	// }
+	// if err != nil {
+	// 	log.Print(err)
+
+	// 	outputErrorMsg(w, http.StatusInternalServerError, "crypt error")
+	// 	return
+	// }
 
 	session := getSession(r)
 
