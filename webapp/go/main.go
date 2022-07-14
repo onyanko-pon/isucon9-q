@@ -1138,6 +1138,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 			tx.Rollback()
 			return
 		}
+		errs <- nil
 	}()
 
 	go func() {
