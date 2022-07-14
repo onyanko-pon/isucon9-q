@@ -53,7 +53,7 @@ CREATE TABLE `transaction_evidences` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
-CREATE INDEX transaction_evidences_item_id_index on transaction_evidences(item_id);
+CREATE UNIQUE INDEX transaction_evidences_item_id_index on transaction_evidences(item_id);
 
 DROP TABLE IF EXISTS `shippings`;
 CREATE TABLE `shippings` (
@@ -72,7 +72,7 @@ CREATE TABLE `shippings` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
-CREATE INDEX shippings_item_id_index on shippings(item_id);
+CREATE UNIQUE INDEX shippings_item_id_index on shippings(item_id);
 
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
