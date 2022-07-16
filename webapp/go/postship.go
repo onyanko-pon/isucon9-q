@@ -54,7 +54,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 
 	transactionEvidence := TransactionEvidenceEntity{}
 
-	querySelect := "SELECT transaction_evidences.*, items.status as item_status, shippings.id as shipping_id, shippings.shipping_reserve_id as shipping_reserve_id FROM transaction_evidences "
+	querySelect := "SELECT transaction_evidences.*, items.status as item_status, shippings.id as shipping_id, shippings.shipping_reserve_id as shipping_reserve_id FROM transaction_evidences"
 	queryJoin := "LEFT JOIN items ON items.id = transaction_evidences.item_id " +
 		"LEFT JOIN shippings ON shippings.transaction_evidence_id = transaction_evidences.id "
 	queryWhere := "WHERE item_id = ? "
