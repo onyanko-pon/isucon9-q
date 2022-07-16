@@ -24,7 +24,7 @@ type TransactionEvidenceEntity struct {
 	UpdatedAt          time.Time `json:"-" db:"updated_at"`
 
 	ItemStatus        string `db:"item_status"`
-	ShippingStatus    string `db:"shipping_status"`
+	ShippingID        *int64 `db:"shipping_id"`
 	ShippingReserveID string `db:"shipping_reserve_id"`
 }
 
@@ -54,7 +54,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 
 	transactionEvidence := TransactionEvidenceEntity{}
 
-	querySelect := "SELECT transaction_evidences.*, items.status as item_status, shippings.status as shipping_status, shippings.shipping_reserve_id as shipping_reserve_id FROM transaction_evidences "
+	querySelect := "SELECT transaction_evidences.*, items.status as item_status, shippings.id as shipping_id, shippings.shipping_reserve_id as shipping_reserve_id FROM transaction_evidences "
 	queryJoin := "LEFT JOIN items ON items.id = transaction_evidences.item_id " +
 		"LEFT JOIN shippings ON shippings.transaction_evidence_id = transaction_evidences.id "
 	queryWhere := "WHERE item_id = ? "
@@ -116,7 +116,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 	// 	outputErrorMsg(w, http.StatusNotFound, "shippings not found")
 	// 	return
 	// }
-	if transactionEvidence.ShippingStatus == "" {
+	if transactionEvidence.ShippingID == nil {
 		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
 		return
 	}
