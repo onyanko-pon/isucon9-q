@@ -425,11 +425,15 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items := []model.Item{}
+	items := []model.ItemEntity{}
 	if itemID > 0 && createdAt > 0 {
 		// paging
 		err := dbx.Select(&items,
-			"SELECT * FROM `items` WHERE `status` IN (?,?) AND (`created_at` < ?  OR (`created_at` <= ? AND `id` < ?)) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
+			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` "+
+				"FROM `items` "+
+				"JOIN `users` ON `items`.`seller_id` = `users`.`id` "+
+				"WHERE `items`.`status` IN (?,?) AND (`items`.`created_at` < ?  OR (`items`.`created_at` <= ? AND `items`.`id` < ?)) "+
+				"ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
 			ItemStatusOnSale,
 			ItemStatusSoldOut,
 			time.Unix(createdAt, 0),
@@ -445,7 +449,11 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// 1st page
 		err := dbx.Select(&items,
-			"SELECT * FROM `items` WHERE `status` IN (?,?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
+			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` "+
+				"FROM `items` "+
+				"JOIN `users` ON `items`.`seller_id` = `users`.`id` "+
+				"WHERE `items`.`status` IN (?,?) "+
+				"ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
 			ItemStatusOnSale,
 			ItemStatusSoldOut,
 			ItemsPerPage+1,
@@ -459,20 +467,15 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 
 	itemSimples := []model.ItemSimple{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(dbx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			return
-		}
-		category, err := getCategoryByID(dbx, item.CategoryID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "category not found")
-			return
-		}
-		itemSimples = append(itemSimples, model.ItemSimple{
-			ID:         item.ID,
-			SellerID:   item.SellerID,
-			Seller:     &seller,
+		category := model.GetCategoryByID(item.CategoryID)
+		d := model.ItemSimple{
+			ID:       item.ID,
+			SellerID: item.SellerID,
+			Seller: &model.UserSimple{
+				ID:           item.SellerID,
+				AccountName:  item.SellerAccoutName,
+				NumSellItems: item.SellerNumSellItems,
+			},
 			Status:     item.Status,
 			Name:       item.Name,
 			Price:      item.Price,
@@ -480,7 +483,8 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 			CategoryID: item.CategoryID,
 			Category:   &category,
 			CreatedAt:  item.CreatedAt.Unix(),
-		})
+		}
+		itemSimples = append(itemSimples, d)
 	}
 
 	hasNext := false
@@ -546,7 +550,11 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	if itemID > 0 && createdAt > 0 {
 		// paging
 		inQuery, inArgs, err = sqlx.In(
-			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` FROM `items` JOIN `users` ON `items`.`seller_id` = `users`.`id` WHERE `items`.`status` IN (?,?) AND `items`.`category_id` IN (?) AND (`items`.`created_at` < ?  OR (`items`.`created_at` <= ? AND `items`.`id` < ?)) ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
+			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` "+
+				"FROM `items` "+
+				"JOIN `users` ON `items`.`seller_id` = `users`.`id` "+
+				"WHERE `items`.`status` IN (?,?) AND `items`.`category_id` IN (?) AND (`items`.`created_at` < ?  OR (`items`.`created_at` <= ? AND `items`.`id` < ?)) "+
+				"ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
 			ItemStatusOnSale,
 			ItemStatusSoldOut,
 			categoryIDs,
@@ -563,7 +571,11 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// 1st page
 		inQuery, inArgs, err = sqlx.In(
-			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` FROM `items` JOIN `users` ON `items`.`seller_id` = `users`.`id` WHERE `items`.`status` IN (?,?) AND `items`.`category_id` IN (?) ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
+			"SELECT `items`.`id`, `items`.`seller_id`, `users`.`account_name`, `users`.`num_sell_items`, `items`.`buyer_id`, `items`.`status`, `items`.`name`, `items`.`price`, `items`.`description`, `items`.`image_name`, `items`.`category_id`, `items`.`created_at`, `items`.`updated_at` "+
+				"FROM `items` "+
+				"JOIN `users` ON `items`.`seller_id` = `users`.`id` "+
+				"WHERE `items`.`status` IN (?,?) AND `items`.`category_id` IN (?) "+
+				"ORDER BY `items`.`created_at` DESC, `items`.`id` DESC LIMIT ?",
 			ItemStatusOnSale,
 			ItemStatusSoldOut,
 			categoryIDs,
@@ -576,7 +588,6 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// items := []model.Item{}
 	items := []model.ItemEntity{}
 
 	err = dbx.Select(&items, inQuery, inArgs...)
