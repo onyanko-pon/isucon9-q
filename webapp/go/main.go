@@ -1116,7 +1116,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	tx := dbx.MustBegin()
 
 	var wg sync.WaitGroup
-	wg.Add(4)
+	wg.Add(2)
 
 	var transactionEvidenceID int64
 
