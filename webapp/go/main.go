@@ -1171,68 +1171,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		errs <- nil
 	}()
 
-	var scr *APIShipmentCreateRes
-	go func() {
-		defer wg.Done()
-		scr, err = APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
-			ToAddress:   buyer.Address,
-			ToName:      buyer.AccountName,
-			FromAddress: seller.Address,
-			FromName:    seller.AccountName,
-		})
-		if err != nil {
-			log.Print(err)
-			errs <- err
-			outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-			tx.Rollback()
-			return
-		}
-		errs <- nil
-	}()
-
-	go func() {
-		defer wg.Done()
-
-		pstr, err := APIPaymentToken(getPaymentServiceURL(), &APIPaymentServiceTokenReq{
-			ShopID: PaymentServiceIsucariShopID,
-			Token:  rb.Token,
-			APIKey: PaymentServiceIsucariAPIKey,
-			Price:  targetItem.Price,
-		})
-
-		if err != nil {
-			log.Print(err)
-			errs <- err
-			outputErrorMsg(w, http.StatusInternalServerError, "payment service is failed")
-			tx.Rollback()
-			return
-		}
-
-		if pstr.Status == "invalid" {
-			errs <- fmt.Errorf("カード情報に誤りがあります")
-			outputErrorMsg(w, http.StatusBadRequest, "カード情報に誤りがあります")
-			tx.Rollback()
-			return
-		}
-
-		if pstr.Status == "fail" {
-			errs <- fmt.Errorf("カードの残高が足りません")
-			outputErrorMsg(w, http.StatusBadRequest, "カードの残高が足りません")
-			tx.Rollback()
-			return
-		}
-
-		if pstr.Status != "ok" {
-			errs <- fmt.Errorf("想定外のエラー")
-			outputErrorMsg(w, http.StatusBadRequest, "想定外のエラー")
-			tx.Rollback()
-			return
-		}
-
-		errs <- nil
-	}()
-
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 2; i++ {
 		err = <-errs
 		if err != nil {
 			tx.Rollback()
@@ -1240,6 +1179,56 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	wg.Wait()
+
+	scr, err := APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
+		ToAddress:   buyer.Address,
+		ToName:      buyer.AccountName,
+		FromAddress: seller.Address,
+		FromName:    seller.AccountName,
+	})
+	if err != nil {
+		log.Print(err)
+		errs <- err
+		outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
+		tx.Rollback()
+		return
+	}
+
+	pstr, err := APIPaymentToken(getPaymentServiceURL(), &APIPaymentServiceTokenReq{
+		ShopID: PaymentServiceIsucariShopID,
+		Token:  rb.Token,
+		APIKey: PaymentServiceIsucariAPIKey,
+		Price:  targetItem.Price,
+	})
+
+	if err != nil {
+		log.Print(err)
+		errs <- err
+		outputErrorMsg(w, http.StatusInternalServerError, "payment service is failed")
+		tx.Rollback()
+		return
+	}
+
+	if pstr.Status == "invalid" {
+		errs <- fmt.Errorf("カード情報に誤りがあります")
+		outputErrorMsg(w, http.StatusBadRequest, "カード情報に誤りがあります")
+		tx.Rollback()
+		return
+	}
+
+	if pstr.Status == "fail" {
+		errs <- fmt.Errorf("カードの残高が足りません")
+		outputErrorMsg(w, http.StatusBadRequest, "カードの残高が足りません")
+		tx.Rollback()
+		return
+	}
+
+	if pstr.Status != "ok" {
+		errs <- fmt.Errorf("想定外のエラー")
+		outputErrorMsg(w, http.StatusBadRequest, "想定外のエラー")
+		tx.Rollback()
+		return
+	}
 
 	_, err = tx.Exec("INSERT INTO `shippings` (`transaction_evidence_id`, `status`, `item_name`, `item_id`, `reserve_id`, `reserve_time`, `to_address`, `to_name`, `from_address`, `from_name`, `img_binary`) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
 		transactionEvidenceID,
