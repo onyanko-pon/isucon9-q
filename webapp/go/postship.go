@@ -57,7 +57,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 	querySelect := "SELECT transaction_evidences.*, items.status as item_status, shippings.status as shipping_status, shippings.reserve_id as shipping_reserve_id FROM transaction_evidences "
 	queryJoin := "LEFT JOIN items ON items.id = transaction_evidences.item_id " +
 		"LEFT JOIN shippings ON shippings.transaction_evidence_id = transaction_evidences.id "
-	queryWhere := "WHERE item_id = ? "
+	queryWhere := "WHERE transaction_evidences.item_id = ? "
 	query := querySelect + queryJoin + queryWhere
 
 	err = dbx.Get(&transactionEvidence, query, itemID)
