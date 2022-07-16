@@ -54,7 +54,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item := model.Item{}
-	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ?", itemID)
+	err = dbx.Get(&item, "SELECT * FROM `items` WHERE `id` = ?", itemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
 		return
